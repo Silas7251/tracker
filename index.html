@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Jesko Routine & Performance Index</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Supabase Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Space Grotesk"', 'sans-serif'],
+          },
+          colors: {
+            luxury: {
+              sand: '#e8e2d9',
+              champagne: '#c8b49a',
+              bronze: '#9d7c58',
+              obsidian: '#0d0e11',
+              cardDark: '#13151a',
+              borderDark: '#23262f',
+              cardLight: '#fcfbf9',
+              borderLight: '#e4dfd7'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input, textarea, select {
+      user-select: text;
+    }
+    .spec-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="bg-[#f5f2ed] text-slate-900 dark:bg-luxury-obsidian dark:text-[#f3efe9] min-h-screen flex flex-col font-sans transition-colors duration-300">
+
+  <!-- TOP BAR -->
+  <header class="sticky top-0 z-30 backdrop-blur-xl bg-[#f5f2ed]/85 dark:bg-luxury-obsidian/85 border-b border-luxury-borderLight dark:border-luxury-borderDark px-5 py-3.5 flex items-center justify-between">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="spec-label text-luxury-bronze dark:text-luxury-champagne" id="current-date-display">PERFORMANCE LOG</span>
+        <div id="sync-badge" class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono tracking-wider bg-black/5 dark:bg-white/5 border border-luxury-borderLight dark:border-luxury-borderDark text-slate-500">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-500" id="sync-dot"></span>
+          <span id="sync-text">VERBINDEN...</span>
+        </div>
+      </div>
+      <h1 class="font-display text-lg tracking-wider font-semibold uppercase">Daily Index</h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="toggleDarkMode()" class="p-2.5 rounded-full border border-luxury-borderLight dark:border-luxury-borderDark bg-white/50 dark:bg-zinc-900/60 text-slate-700 dark:text-zinc-300 active:scale-95 transition">
+        <i data-lucide="moon" class="w-4 h-4 hidden dark:block"></i>
+        <i data-lucide="sun" class="w-4 h-4 block dark:hidden"></i>
+      </button>
+      <button onclick="openModal()" class="flex items-center gap-1.5 bg-slate-950 dark:bg-[#f3efe9] text-white dark:text-slate-950 px-4 py-2 rounded-full text-xs font-semibold tracking-wider uppercase active:scale-95 transition shadow-sm">
+        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+        Erstellen
+      </button>
+    </div>
+  </header>
+
+  <!-- HAUPTBEREICH -->
+  <main class="flex-1 max-w-2xl w-full mx-auto px-4 py-5 pb-28 space-y-6">
+
+    <!-- REITER NAVIGATION -->
+    <div class="flex p-1 bg-white/70 dark:bg-luxury-cardDark border border-luxury-borderLight dark:border-luxury-borderDark rounded-2xl text-[10px] font-semibold tracking-wider uppercase">
+      <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="flex-1 py-2 rounded-xl bg-slate-900 text-white dark:bg-zinc-800 dark:text-white transition shadow-sm">Dashboard</button>
+      <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="flex-1 py-2 rounded-xl text-slate-500 dark:text-zinc-400 transition">Analytics</button>
+      <button onclick="switchTab('calendar')" id="tab-btn-calendar" class="flex-1 py-2 rounded-xl text-slate-500 dark:text-zinc-400 transition">Kalender</button>
+      <button onclick="switchTab('manage')" id="tab-btn-manage" class="flex-1 py-2 rounded-xl text-slate-500 dark:text-zinc-400 transition">Routinen</button>
+    </div>
+
+    <!-- VIEW 1: DASHBOARD -->
+    <div id="view-dashboard" class="space-y-6">
+
+      <!-- KPI METRIC TILES -->
+      <div class="grid grid-cols-3 gap-2.5">
+        <div class="p-4 rounded-2xl bg-luxury-cardLight dark:bg-luxury-cardDark border border-luxury-borderLight dark:border-luxury-borderDark">
+          <p class="spec-label text-slate-400">STREAK</p>
+          <div class="flex items-baseline gap-1 mt-1">
+            <span id="kpi-streak" class="font-display text-2xl font-bold text-slate-900 dark:text-white">0</span>
+            <span class="text-[10px] font-mono text-luxury-bronze dark:text-luxury-champagne font-bold">TAGE 🔥</span>
+          </div>
+        </div>
+        <div class="p-4 rounded-2xl bg-luxury-cardLight dark:bg-luxury-cardDark border border-luxury-borderLight dark:border-luxury-borderDark">
+          <p class="spec-label text-slate-400">7T SCHNITT</p>
+          <div class="flex items-baseline gap-1 mt-1">
+            <span id="kpi-7d-avg" class="font-display text-2xl font-bold text-slate-900 dark:text-white">0.0</span>
+            <span class="text-[10px] font-mono text-slate-400">/ 10</span>
+          </div>
+        </div>
+        <div class="p-4 rounded-2xl bg-luxury-cardLight dark:bg-luxury-cardDark border border-luxury-borderLight dark:border-luxury-borderDark">
+          <p class="spec-label text-slate-400">DISZIPLIN</p>
+          <div class="flex items-baseline gap-1 mt-1">
+            <span id="kpi-discipline" class="font-display text-2xl font-bold text-emerald-600 dark:text-emerald-400">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HERO SCORE & CHART -->
+      <div class="p-6 rounded-3xl bg-luxury-cardLight dark:bg-luxury-cardDark border border-luxury-borderLight dark:border-luxury-borderDark shadow-sm space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="spec-label text-slate-400 dark:text-zinc-500">HEUTIGER INDEX</span>
+              <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold tracking-wider uppercase bg-luxury-bronze/10 text-luxury-bronze dark:bg-luxury-champagne/10 dark:text-luxury-champagne">Target: 8.0</span>
+            </div>
+            <div class="flex items-baseline gap-2 mt-1">
+              <span id="header-score" class="font-display text-5xl font-bold tracking-tight text-slate-950 dark:text-[#f3efe9]">0.0</span>
+              <span class="text-xs font-mono text-slate-400 uppercase">/ 10.0 pts</span>
+            </div>
+          </div>
+          <div class="flex gap-1 text-[10px] font-bold tracking-widest uppercase bg-black/5 dark:bg-white/5 p-1 rounded-xl">
+            <button onclick="updateChartRange('7')" class="chart-range-btn px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-800 shadow-xs" data-range="7">7T</button>
+            <button onclick="updateChartRange('30')" class="chart-range-btn px-2.5 py-1 rounded-lg text-slate-400 dark:text-zinc-500" data-range="30">1M</button>
+            <button onclick="updateChartRange('90')" class="chart-range-btn px-2.5 py-1 rounded-lg text-slate-400 dark:text-zinc-500" data-range="90">3M</button>
+          </div>
+        </div>
+
+        <div class="h-44 w-full pt-2">
+          <canvas id="performanceChart"></canvas>
+        </div>
+      </div>
+
+      <!-- SEKTION 1: ROUTINEN & TAGESZIELE -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <span class="spec-label text-slate-400 dark:text-zinc-400 flex items-center gap-1.5">
+            <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-luxury-bronze dark:text-luxury-champagne"></i>
+            Tagesziele & Routinen
+          </span>
+          <span class="text-[10px] uppercase font-mono tracking-wider text-rose-500">Unerledigt = 0 PTS</span>
+        </div>
+
+        <div id="todo-list" class="space-y-2.5"></div>
+      </div>
+
+      <!-- SEKTION 2: AGENDA & TERMINE -->
+      <div class="space-y-3 pt-1">
+        <div class="flex items-center justify-between px-1">
+          <span class="spec-label text-slate-400 dark:text-zinc-400 flex items-center gap-1.5">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+            Termine & Erinnerungen
+          </span>
+          <span class="text-[10px] uppercase font-mono tracking-wider text-slate-400">Neutral</span>
+        </div>
+
+        <div id="appointment-list" class="space-y-2"></div>
+      </div>
+
+      <!-- ERFOLGSTAGEBUCH -->
+      <div class="p-6 rounded-3xl bg-luxury-cardLight dark:bg-luxury-cardDark border border-luxury-borderLight dark:border-luxury-borderDark shadow-sm space-y-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="feather" class="w-4 h-4 text-luxury-bronze dark:text-luxury-champagne"></i>
+          <span class="spec-label text-slate-900 dark:text-zinc-200">Reflexion & Erkenntnis</span>
+        </div>
+        <textarea id="daily-journal" rows="3" placeholder="Fokuspunkte, Siege des Tages oder Lektionen..." class="w-full text-sm p-3.5 rounded-2xl bg-white dark:bg-zinc-900/50 border border-luxury-borderLight dark:border-luxury-borderDark focus:outline-none focus:ring-1 focus:ring-luxury-bronze dark:focus:ring-luxury-champagne resize-none placeholder:text-slate-400 dark:placeholder:text-zinc-600"></textarea>
+        <div class="flex justify-end">
+          <button onclick="saveDailyJournal()" class="text-xs font-semibold uppercase tracking-wider bg-slate-950 dark:bg-[#f3efe9] text-white dark:text-slate-950 px-4 py-2 rounded-xl active:scale-95 transition">
+            Eintrag sichern
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: ANALYTICS -->
+    <div id="view-analytics" class="hidden space-y-6">
+      <div class="p-6 rounded-3xl bg-luxury-cardLight dark:bg-luxury-cardDark border border-luxury-borderLight dark:border-luxury-borderDark shadow-sm space-y-5">
+        <div>
+          <h2 class="font-display font-bold text-base uppercase tracking-wider">Performance Audit</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Statistische Auswertung deiner Gewohnheiten und Spitzenzeiten.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 rounded-2xl bg-white dark:bg-zinc-900/60 border border-luxury-borderLight dark:border-luxury-borderDark">
+            <p class="spec-label text-slate-400">STÄRKSTER TAG</p>
+            <p id="stat-best-day" class="font-display text-lg font-bold mt-1 text-slate-900 dark:text-white">-</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-white dark:bg-zinc-900/60 border border-luxury-borderLight dark:border-luxury-borderDark">
+            <p class="spec-label text-slate-400">SCHWÄCHSTER TAG</p>
+            <p id="stat-worst-day" class="font-display text-lg font-bold mt-1 text-slate-900 dark:text-white">-</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-white dark:bg-zinc-900/60 border border-luxury-borderLight dark:border-luxury-borderDark">
+            <p class="spec-label text-slate-400">30-TAGE SCHNITT</p>
+            <p id="stat-30d-avg" class="font-display text-lg font-bold mt-1 text-slate-900 dark:text-white">0.0 / 10</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-white dark:bg-zinc-900/60 border border-luxury-borderLight dark:border-luxury-borderDark">
+            <p class="spec-label text-slate-400">TARGET ERREICHT (&ge;8.0)</p>
+            <p id="stat-target-rate" class="font-display text-lg font-bold mt-1 text-emerald-600 dark:text-emerald-400">0%</p>
+          </div>
+        </div>
+
+        <!-- BACKUP SECTION -->
+        <div class="pt-4 border-t border-luxury-borderLight dark:border-luxury-borderDark space-y-3">
+          <span class="spec-label text-slate-400 block">MANUELLES BACKUP</span>
+          <div class="flex gap-2">
+            <button onclick="exportData()" class="flex-1 py-3 bg-white dark:bg-zinc-800 border border-luxury-borderLight dark:border-luxury-borderDark rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition">
+              <i data-lucide="download" class="w-4 h-4"></i> Backup Exportieren
+            </button>
+            <label class="flex-1 py-3 bg-white dark:bg-zinc-800 border border-luxury-borderLight dark:border-luxury-borderDark rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition">
+              <i data-lucide="upload" class="w-4 h-4"></i> Importieren
+              <input type="file" id="import-file" onchange="importData(event)" class="hidden" accept=".json">
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: KALENDER -->
+    <div id="view-calendar" class="hidden space-y-4">
+      <div class="p-6 rounded-3xl bg-luxury-cardLight dark:bg-luxury-cardDark border border-luxury-borderLight dark:border-luxury-borderDark shadow-sm">
+        <h2 class="font-display font-bold text-base uppercase tracking-wider mb-1">Historie & Monatsmatrix</h2>
+        <p class="text-xs text-slate-400 mb-5">Visuelle Übersicht deiner Tagesergebnisse.</p>
+        <div id="calendar-grid" class="grid grid-cols-7 gap-2 text-center text-xs"></div>
+      </div>
+      <div id="selected-day-details" class="p-5 rounded-2xl bg-luxury-cardLight dark:bg-luxury-cardDark border border-luxury-borderLight dark:border-luxury-borderDark hidden space-y-2"></div>
+    </div>
+
+    <!-- VIEW 4: ROUTINEN VERWALTEN -->
+    <div id="view-manage" class="hidden space-y-4">
+      <div class="p-6 rounded-3xl bg-luxury-cardLight dark:bg-luxury-cardDark border border-luxury-borderLight dark:border-luxury-borderDark shadow-sm space-y-4">
+        <div>
+          <h2 class="font-display font-bold text-base uppercase tracking-wider">Aktive Routinen</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Konfiguriere Gewichtung und Fälligkeitstage.</p>
+        </div>
+        <div id="routines-manager-list" class="space-y-2.5"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: NEUER EINTRAG -->
+  <div id="add-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-luxury-cardLight dark:bg-luxury-cardDark w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 space-y-5 max-h-[90vh] overflow-y-auto border border-luxury-borderLight dark:border-luxury-borderDark shadow-2xl">
+      <div class="flex justify-between items-center pb-3 border-b border-luxury-borderLight dark:border-luxury-borderDark">
+        <span class="spec-label text-luxury-bronze dark:text-luxury-champagne">Konfiguration</span>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2">
+        <button type="button" onclick="setModalType('routine')" id="type-routine-btn" class="py-2.5 text-center rounded-xl border text-[11px] font-bold tracking-wider uppercase border-slate-900 bg-slate-900 text-white dark:border-luxury-champagne dark:bg-luxury-champagne dark:text-slate-950">Routine</button>
+        <button type="button" onclick="setModalType('todo')" id="type-todo-btn" class="py-2.5 text-center rounded-xl border text-[11px] font-bold tracking-wider uppercase border-luxury-borderLight dark:border-luxury-borderDark text-slate-500 dark:text-zinc-400">To-Do</button>
+        <button type="button" onclick="setModalType('appointment')" id="type-app-btn" class="py-2.5 text-center rounded-xl border text-[11px] font-bold tracking-wider uppercase border-luxury-borderLight dark:border-luxury-borderDark text-slate-500 dark:text-zinc-400">Termin</button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="spec-label text-slate-400 block mb-1">Bezeichnung</label>
+          <input type="text" id="input-title" placeholder="z. B. Strength Training, Cold Outreach..." class="w-full text-sm p-3 rounded-xl bg-white dark:bg-zinc-900 border border-luxury-borderLight dark:border-luxury-borderDark focus:outline-none focus:ring-1 focus:ring-luxury-bronze dark:focus:ring-luxury-champagne">
+        </div>
+
+        <div id="field-weight">
+          <label class="spec-label text-slate-400 block mb-1">Priorität / Fokus</label>
+          <select id="input-weight" class="w-full text-sm p-3 rounded-xl bg-white dark:bg-zinc-900 border border-luxury-borderLight dark:border-luxury-borderDark">
+            <option value="1">Standard (1x Gewicht)</option>
+            <option value="2">Core Focus / Top Priority (2x Gewicht)</option>
+          </select>
+        </div>
+
+        <div id="field-weekdays" class="space-y-2">
+          <label class="spec-label text-slate-400 block">Fälligkeitstage</label>
+          <div class="flex justify-between gap-1">
+            <label class="flex flex-col items-center text-xs font-mono"><input type="checkbox" name="wd" value="1" checked class="rounded accent-slate-900 dark:accent-luxury-champagne mb-1">Mo</label>
+            <label class="flex flex-col items-center text-xs font-mono"><input type="checkbox" name="wd" value="2" checked class="rounded accent-slate-900 dark:accent-luxury-champagne mb-1">Di</label>
+            <label class="flex flex-col items-center text-xs font-mono"><input type="checkbox" name="wd" value="3" checked class="rounded accent-slate-900 dark:accent-luxury-champagne mb-1">Mi</label>
+            <label class="flex flex-col items-center text-xs font-mono"><input type="checkbox" name="wd" value="4" checked class="rounded accent-slate-900 dark:accent-luxury-champagne mb-1">Do</label>
+            <label class="flex flex-col items-center text-xs font-mono"><input type="checkbox" name="wd" value="5" checked class="rounded accent-slate-900 dark:accent-luxury-champagne mb-1">Fr</label>
+            <label class="flex flex-col items-center text-xs font-mono"><input type="checkbox" name="wd" value="6" checked class="rounded accent-slate-900 dark:accent-luxury-champagne mb-1">Sa</label>
+            <label class="flex flex-col items-center text-xs font-mono"><input type="checkbox" name="wd" value="0" checked class="rounded accent-slate-900 dark:accent-luxury-champagne mb-1">So</label>
+          </div>
+        </div>
+
+        <div id="field-datetime" class="hidden space-y-3">
+          <div>
+            <label class="spec-label text-slate-400 block mb-1">Datum</label>
+            <input type="date" id="input-date" class="w-full text-sm p-3 rounded-xl bg-white dark:bg-zinc-900 border border-luxury-borderLight dark:border-luxury-borderDark">
+          </div>
+          <div id="field-time-box" class="hidden">
+            <label class="spec-label text-slate-400 block mb-1">Uhrzeit</label>
+            <input type="time" id="input-time" class="w-full text-sm p-3 rounded-xl bg-white dark:bg-zinc-900 border border-luxury-borderLight dark:border-luxury-borderDark">
+          </div>
+        </div>
+      </div>
+
+      <button onclick="saveNewEntry()" class="w-full py-3.5 bg-slate-950 dark:bg-[#f3efe9] text-white dark:text-slate-950 font-bold uppercase tracking-wider text-xs rounded-2xl active:scale-98 transition shadow-lg">
+        Eintrag Speichern
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: BEWERTUNG & RESET -->
+  <div id="rating-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-luxury-cardLight dark:bg-luxury-cardDark w-full max-w-sm rounded-3xl p-6 space-y-5 border border-luxury-borderLight dark:border-luxury-borderDark shadow-2xl text-center">
+      <div>
+        <span class="spec-label text-luxury-bronze dark:text-luxury-champagne">Ausführungsqualität</span>
+        <h3 id="rating-item-title" class="font-display font-bold text-lg mt-1 text-slate-950 dark:text-white">Aufgabe</h3>
+      </div>
+
+      <div class="space-y-3 py-2">
+        <div class="font-display text-5xl font-extrabold text-slate-950 dark:text-luxury-champagne" id="rating-number">8</div>
+        <input type="range" id="rating-slider" min="1" max="10" value="8" step="1" oninput="document.getElementById('rating-number').innerText = this.value" class="w-full accent-slate-900 dark:accent-luxury-champagne cursor-pointer">
+        <div class="flex justify-between text-[10px] font-mono uppercase text-slate-400">
+          <span>1 Min</span>
+          <span>5 Mid</span>
+          <span>10 Peak</span>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <button onclick="confirmRating()" class="w-full py-3 rounded-2xl bg-slate-950 dark:bg-[#f3efe9] text-white dark:text-slate-950 font-bold text-xs uppercase tracking-wider shadow-md active:scale-95 transition">
+          Score bestätigen
+        </button>
+        <button onclick="resetToUncompleted()" class="w-full py-2.5 rounded-2xl border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 font-semibold text-xs tracking-wider uppercase hover:bg-rose-50 dark:hover:bg-rose-950/20 active:scale-95 transition">
+          Als unerledigt markieren (0 Pkt.)
+        </button>
+        <button onclick="closeRatingModal()" class="w-full py-2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200">
+          Schließen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT & SUPABASE CLOUD SYNC -->
+  <script>
+    // SUPABASE KONFIGURATION
+    const SB_URL = 'https://zriqrgcptyhffoyvtqro.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyaXFyZ2NwdHloZmZveXZ0cXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNjU2NzUsImV4cCI6MjEwNzY0MTY3NX0.GXkbmpJkj8-_fF9BgGimZXtZCyoEI6ZxxuVZlpbt7vM';
+    const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+    let state = {
+      routines: [
+        { id: 'r1', title: 'Strength Training / Gym', weight: 2, days: [1, 3, 5] },
+        { id: 'r2', title: 'High-Value Skill Acquisition', weight: 2, days: [0, 1, 2, 3, 4, 5, 6] },
+        { id: 'r3', title: 'Skincare & Grooming', weight: 1, days: [0, 1, 2, 3, 4, 5, 6] }
+      ],
+      todos: [],
+      appointments: [
+        { id: 'a1', title: 'Strategie-Session / Meeting', date: getTodayStr(), time: '15:30', completed: false }
+      ],
+      dayLogs: {},
+      chartRange: 7
+    };
+
+    let activeModalType = 'routine';
+    let currentRatingTarget = null;
+    let chartInstance = null;
+
+    function getTodayStr() {
+      const d = new Date();
+      return d.toISOString().split('T')[0];
+    }
+
+    function setSyncBadge(status) {
+      const dot = document.getElementById('sync-dot');
+      const txt = document.getElementById('sync-text');
+      if (status === 'live') {
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse';
+        txt.innerText = 'LIVE SYNC';
+        txt.className = 'text-emerald-600 dark:text-emerald-400 font-bold';
+      } else if (status === 'syncing') {
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping';
+        txt.innerText = 'SPEICHERT...';
+        txt.className = 'text-amber-500 font-bold';
+      } else {
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-slate-400';
+        txt.innerText = 'LOKAL';
+        txt.className = 'text-slate-400';
+      }
+    }
+
+    // DATEN LADEN & SYNCEN
+    async function loadData() {
+      const saved = localStorage.getItem('jesko_tracker_v3');
+      if (saved) {
+        try { state = JSON.parse(saved); } catch(e) {}
+      }
+      initChart();
+      refreshUI();
+
+      // Cloud Fetch
+      try {
+        const { data, error } = await sb
+          .from('tracker_data')
+          .select('payload')
+          .eq('id', 'master_data')
+          .single();
+
+        if (data && data.payload) {
+          state = data.payload;
+          localStorage.setItem('jesko_tracker_v3', JSON.stringify(state));
+          refreshUI();
+          setSyncBadge('live');
+        } else {
+          // Erster Upload in die Cloud
+          await sb.from('tracker_data').upsert({ id: 'master_data', payload: state });
+          setSyncBadge('live');
+        }
+      } catch (err) {
+        console.warn('Sync fallback:', err);
+        setSyncBadge('local');
+      }
+
+      // Live-Listener für iPad & iPhone Synchronisation
+      sb.channel('realtime-tracker')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tracker_data' }, (change) => {
+          if (change.new && change.new.payload) {
+            state = change.new.payload;
+            localStorage.setItem('jesko_tracker_v3', JSON.stringify(state));
+            refreshUI();
+            setSyncBadge('live');
+          }
+        })
+        .subscribe();
+    }
+
+    async function saveData() {
+      localStorage.setItem('jesko_tracker_v3', JSON.stringify(state));
+      refreshUI();
+
+      setSyncBadge('syncing');
+      try {
+        const { error } = await sb.from('tracker_data').upsert({ id: 'master_data', payload: state });
+        if (!error) setSyncBadge('live');
+        else setSyncBadge('local');
+      } catch(e) {
+        setSyncBadge('local');
+      }
+    }
+
+    // Beim Wechsel zurück in Safari sofort aktuellen Stand abholen
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        loadData();
+      }
+    });
+
+    function refreshUI() {
+      renderToday();
+      updateChartData();
+      renderCalendar();
+      renderRoutinesManager();
+      calculateAnalytics();
+    }
+
+    function calculateTodayScore() {
+      const today = getTodayStr();
+      const todayLog = state.dayLogs[today] || { scores: {} };
+      const currentDayOfWeek = new Date().getDay();
+
+      const dueRoutines = state.routines.filter(r => r.days.includes(currentDayOfWeek));
+      const dueTodos = state.todos.filter(t => t.date === today);
+      const allScored = [...dueRoutines, ...dueTodos];
+
+      if (allScored.length === 0) return 0;
+
+      let totalPoints = 0;
+      let totalWeight = 0;
+
+      allScored.forEach(item => {
+        const weight = parseInt(item.weight) || 1;
+        const score = (todayLog.scores && todayLog.scores[item.id] !== undefined)
+                      ? todayLog.scores[item.id]
+                      : 0;
+        totalPoints += (score * weight);
+        totalWeight += weight;
+      });
+
+      return totalWeight > 0 ? (totalPoints / totalWeight).toFixed(1) : 0;
+    }
+
+    function calculateStreak() {
+      let streak = 0;
+      let checkDate = new Date();
+      if (parseFloat(calculateTodayScore()) >= 5.0) streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+
+      while (true) {
+        const dateStr = checkDate.toISOString().split('T')[0];
+        const log = state.dayLogs[dateStr];
+        if (log && log.scores) {
+          const vals = Object.values(log.scores);
+          const avg = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+          if (avg >= 5.0) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else break;
+        } else break;
+      }
+      return streak;
+    }
+
+    function calculateAnalytics() {
+      document.getElementById('kpi-streak').innerText = calculateStreak();
+
+      let sum7 = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const ds = d.toISOString().split('T')[0];
+        let score = (ds === getTodayStr()) ? parseFloat(calculateTodayScore()) : 0;
+        if (ds !== getTodayStr() && state.dayLogs[ds]?.scores) {
+          const vals = Object.values(state.dayLogs[ds].scores);
+          score = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+        }
+        sum7 += score;
+      }
+      const avg7 = (sum7 / 7).toFixed(1);
+      document.getElementById('kpi-7d-avg').innerText = avg7;
+      document.getElementById('kpi-discipline').innerText = Math.min(100, Math.round((avg7 / 8.0) * 100)) + '%';
+
+      const dayScores = { 0:[], 1:[], 2:[], 3:[], 4:[], 5:[], 6:[] };
+      let sum30 = 0, daysOverTarget = 0;
+
+      for (let i = 0; i < 30; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const ds = d.toISOString().split('T')[0];
+        const dayIdx = d.getDay();
+        let s = (ds === getTodayStr()) ? parseFloat(calculateTodayScore()) : 0;
+        if (ds !== getTodayStr() && state.dayLogs[ds]?.scores) {
+          const vals = Object.values(state.dayLogs[ds].scores);
+          s = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+        }
+        sum30 += s;
+        if (s >= 8.0) daysOverTarget++;
+        dayScores[dayIdx].push(s);
+      }
+
+      const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+      let bestDay = '-', worstDay = '-', bestAvg = -1, worstAvg = 999;
+      for (let idx in dayScores) {
+        const arr = dayScores[idx];
+        const avg = arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+        if (avg > bestAvg) { bestAvg = avg; bestDay = dayNames[idx]; }
+        if (avg < worstAvg && avg > 0) { worstAvg = avg; worstDay = dayNames[idx]; }
+      }
+
+      document.getElementById('stat-best-day').innerText = bestDay;
+      document.getElementById('stat-worst-day').innerText = worstDay !== '-' ? worstDay : 'Keine Tiefs';
+      document.getElementById('stat-30d-avg').innerText = (sum30 / 30).toFixed(1) + ' / 10';
+      document.getElementById('stat-target-rate').innerText = Math.round((daysOverTarget / 30) * 100) + '%';
+    }
+
+    function renderToday() {
+      const today = getTodayStr();
+      const todayLog = state.dayLogs[today] || { scores: {}, appointments: {}, journal: '' };
+      const currentDayOfWeek = new Date().getDay();
+
+      const d = new Date();
+      document.getElementById('current-date-display').innerText = d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'short' });
+      document.getElementById('header-score').innerText = calculateTodayScore();
+
+      const listEl = document.getElementById('todo-list');
+      listEl.innerHTML = '';
+
+      const dueRoutines = state.routines.filter(r => r.days.includes(currentDayOfWeek));
+      const dueTodos = state.todos.filter(t => t.date === today);
+      const items = [...dueRoutines, ...dueTodos].sort((a,b) => (b.weight || 1) - (a.weight || 1));
+
+      if (items.length === 0) {
+        listEl.innerHTML = `<div class="p-6 text-center text-xs font-mono uppercase text-slate-400 bg-white/40 dark:bg-luxury-cardDark/40 rounded-2xl border border-dashed border-luxury-borderLight dark:border-luxury-borderDark">Keine Einträge für heute.</div>`;
+      } else {
+        items.forEach(item => {
+          const score = todayLog.scores ? todayLog.scores[item.id] : undefined;
+          const isDone = score !== undefined && score > 0;
+          const isRoutine = !item.date;
+          const isCore = item.weight == 2;
+
+          const row = document.createElement('div');
+          row.className = `p-4 rounded-2xl border transition-all flex items-center justify-between ${
+            isDone 
+              ? 'bg-emerald-500/[0.04] border-emerald-500/30 dark:bg-emerald-500/[0.07] dark:border-emerald-500/20' 
+              : isCore 
+                ? 'bg-luxury-cardLight dark:bg-luxury-cardDark border-luxury-bronze/40 dark:border-luxury-champagne/40 shadow-xs'
+                : 'bg-luxury-cardLight dark:bg-luxury-cardDark border-luxury-borderLight dark:border-luxury-borderDark'
+          }`;
+
+          row.innerHTML = `
+            <div class="flex items-center gap-3.5">
+              <button onclick="handleStatusClick('${item.id}', '${item.title.replace(/'/g, "\\'")}', ${isDone})" class="w-6 h-6 rounded-lg border flex items-center justify-center transition active:scale-90 ${
+                isDone 
+                  ? 'bg-slate-900 border-slate-900 text-white dark:bg-luxury-champagne dark:border-luxury-champagne dark:text-slate-950' 
+                  : 'border-slate-300 dark:border-zinc-700 hover:border-slate-500'
+              }">
+                ${isDone ? '<i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>' : ''}
+              </button>
+              <div>
+                <p class="text-sm font-medium ${isDone ? 'line-through text-slate-400 dark:text-zinc-500' : 'text-slate-900 dark:text-zinc-100'}">${item.title}</p>
+                <div class="flex gap-2 items-center text-[10px] uppercase font-mono text-slate-400 mt-0.5">
+                  <span>${isRoutine ? 'Routine' : 'To-Do'}</span>
+                  ${isCore ? '<span class="text-luxury-bronze dark:text-luxury-champagne font-bold">• Top Priority (2x)</span>' : ''}
+                </div>
+              </div>
+            </div>
+            <div class="cursor-pointer" onclick="promptRating('${item.id}', '${item.title.replace(/'/g, "\\'")}')">
+              ${isDone 
+                ? `<span class="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-black/5 dark:bg-white/5 border border-luxury-borderLight dark:border-luxury-borderDark">${score}.0</span>` 
+                : `<span class="text-[11px] font-mono uppercase tracking-wider text-rose-500 font-semibold">0.0 (Offen)</span>`
+              }
+            </div>
+          `;
+          listEl.appendChild(row);
+        });
+      }
+
+      // Termine
+      const appEl = document.getElementById('appointment-list');
+      appEl.innerHTML = '';
+      const dueApps = state.appointments.filter(a => a.date === today);
+
+      if (dueApps.length === 0) {
+        appEl.innerHTML = `<div class="p-3.5 text-center text-xs font-mono uppercase text-slate-400 bg-white/40 dark:bg-luxury-cardDark/40 rounded-2xl border border-dashed border-luxury-borderLight dark:border-luxury-borderDark">Keine Termine.</div>`;
+      } else {
+        dueApps.forEach(app => {
+          const isDone = todayLog.appointments && todayLog.appointments[app.id];
+          const row = document.createElement('div');
+          row.className = `p-3.5 rounded-2xl border bg-luxury-cardLight dark:bg-luxury-cardDark border-luxury-borderLight dark:border-luxury-borderDark flex items-center justify-between`;
+          row.innerHTML = `
+            <div class="flex items-center gap-3">
+              <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleAppointment('${app.id}')" class="w-4 h-4 rounded accent-slate-900 dark:accent-luxury-champagne cursor-pointer">
+              <span class="text-sm ${isDone ? 'line-through text-slate-400' : 'text-slate-800 dark:text-zinc-200'}">${app.title}</span>
+            </div>
+            ${app.time ? `<span class="text-xs font-mono text-slate-400">${app.time}</span>` : ''}
+          `;
+          appEl.appendChild(row);
+        });
+      }
+
+      document.getElementById('daily-journal').value = todayLog.journal || '';
+      lucide.createIcons();
+    }
+
+    function handleStatusClick(id, title, isCurrentlyDone) {
+      if (isCurrentlyDone) {
+        currentRatingTarget = id;
+        resetToUncompleted();
+      } else {
+        promptRating(id, title);
+      }
+    }
+
+    function promptRating(id, title) {
+      currentRatingTarget = id;
+      document.getElementById('rating-item-title').innerText = title;
+      const today = getTodayStr();
+      const existing = (state.dayLogs[today]?.scores || {})[id] || 8;
+      document.getElementById('rating-slider').value = existing;
+      document.getElementById('rating-number').innerText = existing;
+      document.getElementById('rating-modal').classList.remove('hidden');
+    }
+
+    function closeRatingModal() {
+      document.getElementById('rating-modal').classList.add('hidden');
+      currentRatingTarget = null;
+    }
+
+    function confirmRating() {
+      if (!currentRatingTarget) return;
+      const score = parseInt(document.getElementById('rating-slider').value);
+      const today = getTodayStr();
+      if (!state.dayLogs[today]) state.dayLogs[today] = { scores: {}, appointments: {}, journal: '' };
+      state.dayLogs[today].scores[currentRatingTarget] = score;
+      closeRatingModal();
+      saveData();
+    }
+
+    function resetToUncompleted() {
+      if (!currentRatingTarget) return;
+      const today = getTodayStr();
+      if (state.dayLogs[today] && state.dayLogs[today].scores) {
+        delete state.dayLogs[today].scores[currentRatingTarget];
+      }
+      closeRatingModal();
+      saveData();
+    }
+
+    function toggleAppointment(id) {
+      const today = getTodayStr();
+      if (!state.dayLogs[today]) state.dayLogs[today] = { scores: {}, appointments: {}, journal: '' };
+      if (!state.dayLogs[today].appointments) state.dayLogs[today].appointments = {};
+      state.dayLogs[today].appointments[id] = !state.dayLogs[today].appointments[id];
+      saveData();
+    }
+
+    function saveDailyJournal() {
+      const today = getTodayStr();
+      if (!state.dayLogs[today]) state.dayLogs[today] = { scores: {}, appointments: {}, journal: '' };
+      state.dayLogs[today].journal = document.getElementById('daily-journal').value;
+      saveData();
+    }
+
+    function exportData() {
+      const jsonStr = JSON.stringify(state, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `jesko_tracker_backup_${getTodayStr()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.routines && imported.dayLogs) {
+            state = imported;
+            saveData();
+            alert('Backup erfolgreich wiederhergestellt!');
+          }
+        } catch(err) {
+          alert('Fehler beim Einlesen der Datei.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function openModal() {
+      document.getElementById('add-modal').classList.remove('hidden');
+      document.getElementById('input-date').value = getTodayStr();
+    }
+
+    function closeModal() {
+      document.getElementById('add-modal').classList.add('hidden');
+      document.getElementById('input-title').value = '';
+    }
+
+    function setModalType(type) {
+      activeModalType = type;
+      const rBtn = document.getElementById('type-routine-btn');
+      const tBtn = document.getElementById('type-todo-btn');
+      const aBtn = document.getElementById('type-app-btn');
+      const wField = document.getElementById('field-weight');
+      const wdField = document.getElementById('field-weekdays');
+      const dtField = document.getElementById('field-datetime');
+      const timeBox = document.getElementById('field-time-box');
+
+      const inactiveClass = "py-2.5 text-center rounded-xl border text-[11px] font-bold tracking-wider uppercase border-luxury-borderLight dark:border-luxury-borderDark text-slate-500 dark:text-zinc-400";
+      const activeClass = "py-2.5 text-center rounded-xl border text-[11px] font-bold tracking-wider uppercase border-slate-900 bg-slate-900 text-white dark:border-luxury-champagne dark:bg-luxury-champagne dark:text-slate-950";
+
+      [rBtn, tBtn, aBtn].forEach(b => b.className = inactiveClass);
+
+      if (type === 'routine') {
+        rBtn.className = activeClass;
+        wField.classList.remove('hidden');
+        wdField.classList.remove('hidden');
+        dtField.classList.add('hidden');
+      } else if (type === 'todo') {
+        tBtn.className = activeClass;
+        wField.classList.remove('hidden');
+        wdField.classList.add('hidden');
+        dtField.classList.remove('hidden');
+        timeBox.classList.add('hidden');
+      } else {
+        aBtn.className = activeClass;
+        wField.classList.add('hidden');
+        wdField.classList.add('hidden');
+        dtField.classList.remove('hidden');
+        timeBox.classList.remove('hidden');
+      }
+    }
+
+    function saveNewEntry() {
+      const title = document.getElementById('input-title').value.trim();
+      if (!title) return alert('Bitte Bezeichnung eingeben.');
+      const weight = parseInt(document.getElementById('input-weight').value) || 1;
+
+      if (activeModalType === 'routine') {
+        const checkedDays = Array.from(document.querySelectorAll('input[name="wd"]:checked')).map(cb => parseInt(cb.value));
+        state.routines.push({ id: 'r_' + Date.now(), title, weight, days: checkedDays });
+      } else if (activeModalType === 'todo') {
+        const date = document.getElementById('input-date').value || getTodayStr();
+        state.todos.push({ id: 't_' + Date.now(), title, weight, date });
+      } else {
+        const date = document.getElementById('input-date').value || getTodayStr();
+        const time = document.getElementById('input-time').value;
+        state.appointments.push({ id: 'a_' + Date.now(), title, date, time });
+      }
+
+      closeModal();
+      saveData();
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('performanceChart').getContext('2d');
+      const isDark = document.documentElement.classList.contains('dark');
+      const accentColor = isDark ? '#c8b49a' : '#0d0e11';
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Score',
+              data: [],
+              borderColor: accentColor,
+              borderWidth: 2,
+              pointBackgroundColor: accentColor,
+              pointRadius: 2,
+              tension: 0.3,
+              fill: false
+            },
+            {
+              label: 'Target (8.0)',
+              data: [],
+              borderColor: 'rgba(234, 179, 8, 0.45)',
+              borderWidth: 1.5,
+              borderDash: [4, 4],
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              min: 0,
+              max: 10,
+              ticks: { stepSize: 2.5, color: '#888' },
+              grid: { color: isDark ? '#23262f' : '#e4dfd7' }
+            },
+            x: {
+              ticks: { color: '#888' },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+      updateChartData();
+    }
+
+    function updateChartRange(days) {
+      state.chartRange = parseInt(days);
+      document.querySelectorAll('.chart-range-btn').forEach(b => {
+        if (b.dataset.range === days) {
+          b.className = "chart-range-btn px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-800 shadow-xs font-bold text-slate-900 dark:text-white";
+        } else {
+          b.className = "chart-range-btn px-2.5 py-1 rounded-lg text-slate-400 dark:text-zinc-500";
+        }
+      });
+      updateChartData();
+    }
+
+    function updateChartData() {
+      if (!chartInstance) return;
+      const daysCount = state.chartRange || 7;
+      const labels = [], scores = [], targets = [];
+
+      for (let i = daysCount - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        labels.push(d.toLocaleDateString('de-DE', { weekday: 'narrow', day: 'numeric' }));
+        targets.push(8.0);
+
+        if (dateStr === getTodayStr()) {
+          scores.push(calculateTodayScore());
+        } else {
+          const log = state.dayLogs[dateStr];
+          if (log && log.scores) {
+            const vals = Object.values(log.scores);
+            scores.push(vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : 0);
+          } else {
+            scores.push(0);
+          }
+        }
+      }
+
+      chartInstance.data.labels = labels;
+      chartInstance.data.datasets[0].data = scores;
+      chartInstance.data.datasets[1].data = targets;
+      chartInstance.update();
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+      const now = new Date();
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        let score = 0;
+        if (dateStr === getTodayStr()) {
+          score = calculateTodayScore();
+        } else if (state.dayLogs[dateStr]?.scores) {
+          const vals = Object.values(state.dayLogs[dateStr].scores);
+          score = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+        }
+
+        let bg = 'bg-black/5 dark:bg-white/5 text-slate-400';
+        if (score >= 8.0) bg = 'bg-luxury-bronze dark:bg-luxury-champagne text-white dark:text-slate-950 font-bold';
+        else if (score >= 5.0) bg = 'bg-slate-300 dark:bg-zinc-700 text-slate-900 dark:text-white font-medium';
+        else if (score > 0) bg = 'bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold';
+
+        const cell = document.createElement('button');
+        cell.className = `p-2.5 rounded-xl flex flex-col items-center justify-center transition active:scale-95 ${bg}`;
+        cell.innerHTML = `<span>${day}</span><span class="text-[9px] opacity-80 font-mono">${score > 0 ? score : '-'}</span>`;
+        cell.onclick = () => showDayDetails(dateStr, score);
+        grid.appendChild(cell);
+      }
+    }
+
+    function showDayDetails(dateStr, score) {
+      const box = document.getElementById('selected-day-details');
+      const log = state.dayLogs[dateStr] || { journal: '' };
+      box.classList.remove('hidden');
+      box.innerHTML = `
+        <div class="flex justify-between items-center">
+          <span class="spec-label text-slate-400">${dateStr}</span>
+          <span class="font-display font-bold text-sm">${score} / 10 PTS</span>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-zinc-400 italic">${log.journal ? `"${log.journal}"` : 'Kein Reflexions-Eintrag.'}</p>
+      `;
+    }
+
+    function renderRoutinesManager() {
+      const container = document.getElementById('routines-manager-list');
+      container.innerHTML = '';
+      const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+      state.routines.forEach(r => {
+        const days = r.days.map(d => dayNames[d]).join(', ');
+        const card = document.createElement('div');
+        card.className = "p-4 rounded-2xl border border-luxury-borderLight dark:border-luxury-borderDark bg-luxury-cardLight dark:bg-luxury-cardDark flex justify-between items-center";
+        card.innerHTML = `
+          <div>
+            <h4 class="text-sm font-semibold">${r.title}</h4>
+            <p class="text-[10px] font-mono uppercase text-slate-400 mt-0.5">${days} • ${r.weight}x Focus</p>
+          </div>
+          <button onclick="deleteRoutine('${r.id}')" class="text-rose-500 hover:text-rose-700 p-2">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        `;
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    function deleteRoutine(id) {
+      if (confirm('Routine entfernen?')) {
+        state.routines = state.routines.filter(r => r.id !== id);
+        saveData();
+      }
+    }
+
+    function switchTab(tab) {
+      ['dashboard', 'analytics', 'calendar', 'manage'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        document.getElementById(`tab-btn-${t}`).className = "flex-1 py-2 rounded-xl text-slate-500 dark:text-zinc-400 transition";
+      });
+      document.getElementById(`view-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-btn-${tab}`).className = "flex-1 py-2 rounded-xl bg-slate-900 text-white dark:bg-zinc-800 dark:text-white transition shadow-sm";
+    }
+
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+      if (chartInstance) {
+        chartInstance.destroy();
+        initChart();
+      }
+    }
+
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark');
+    }
+
+    window.onload = loadData;
+  </script>
+</body>
+</html>
